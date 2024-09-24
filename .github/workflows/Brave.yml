@@ -1,29 +1,50 @@
-name: Get-Latest-Brave-Version-Mac
+name: Read Info.plist
 
-on:
+on: 
   workflow_dispatch:
 
 jobs:
-  hello-world:
-    name: Get Latest Brave Version from Mac DMG
-    runs-on:
-      - macos-latest
-    permissions:
-      contents: write
+  read-info-plist:
+    runs-on: macos-latest
     steps:
-      - name: Download Brave DMG
-        id: download-brave
+      - name: Download DMG file
         run: |
-          curl -o /tmp/brave.dmg 
-https://laptop-updates.brave.com/latest/osx/Brave-Browser.dmg
-      - name: Mount Brave DMG
-        id: mount-brave
+          curl -L -o Brave-Browser.dmg https://laptop-updates.brave.com/latest/osx/Brave-Browser.dmg
+          ls -l Brave-Browser.dmg
+
+      - name: Create Mount Directory
         run: |
-          hdiutil attach /tmp/brave.dmg 
-      - name: Get Plist Version
-        id: get-plist-version
+          mkdir -p ${{ github.workspace }}/mount
+
+      - name: Mount DMG file
         run: |
-"Brave Browser"/"Brave Browser.app"/Contents/Info.plist
-          BRAVEVER=$(defaults read /Volumes/Brave Browser\ Brave Browser.app/Contents/Info.plist CFBundleShortVersionString)
-          #cat /Volumes/Brave Browser\ Brave Browser.app/Contents/Info.plist
-          echo "Brave Version: $BRAVEVER"
+          hdiutil attach -mountpoint ${{ github.workspace }}/mount Brave-Browser.dmg
+
+      - name: List Contents of Mount Point
+        run: |
+          ls -lR ${{ github.workspace }}/mount > mount_contents.txt
+          cat mount_contents.txt
+
+      - name: List Contents of Contents Directory
+        run: |
+          ls -lR "${{ github.workspace }}/mount/Brave Browser.app/Contents" > contents_directory.txt
+          cat contents_directory.txt
+
+      - name: Extract CFBundleShortVersionString
+        run: |
+          INFO_PLIST_PATH="${{ github.workspace }}/mount/Brave Browser.app/Contents/Info.plist"
+          if [ -f "$INFO_PLIST_PATH" ]; then
+            echo "Extracting CFBundleShortVersionString from $INFO_PLIST_PATH"
+            plutil -extract CFBundleShortVersionString xml1 -o - "$INFO_PLIST_PATH" | grep "<string>" | sed -e 's/<string>//' -e 's/<\/string>//'
+          else
+            echo "Info.plist not found at $INFO_PLIST_PATH"
+          fi
+
+      - name: Unmount DMG file
+        run: |
+          hdiutil detach ${{ github.workspace }}/mount
+
+      - name: Cleanup
+        run: |
+          rm -f Brave-Browser.dmg
+          rm -rf ${{ github.workspace }}/mount
