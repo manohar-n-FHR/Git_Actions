@@ -1,0 +1,29 @@
+name: Get-Latest-Brave-Version-Mac
+
+on:
+  workflow_dispatch:
+
+jobs:
+  hello-world:
+    name: Get Latest Brave Version from Mac DMG
+    runs-on:
+      - macos-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Brave DMG
+        id: download-brave
+        run: |
+          curl -o /tmp/brave.dmg 
+https://laptop-updates.brave.com/latest/osx/Brave-Browser.dmg
+      - name: Mount Brave DMG
+        id: mount-brave
+        run: |
+          hdiutil attach /tmp/brave.dmg 
+      - name: Get Plist Version
+        id: get-plist-version
+        run: |
+"Brave Browser"/"Brave Browser.app"/Contents/Info.plist
+          BRAVEVER=$(defaults read /Volumes/Brave Browser\ Brave Browser.app/Contents/Info.plist CFBundleShortVersionString)
+          #cat /Volumes/Brave Browser\ Brave Browser.app/Contents/Info.plist
+          echo "Brave Version: $BRAVEVER"
