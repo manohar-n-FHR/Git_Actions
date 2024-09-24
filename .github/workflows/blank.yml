@@ -1,0 +1,27 @@
+name: Get-Latest-Chrome-Version-Mac
+
+on:
+  workflow_dispatch:
+
+jobs:
+  hello-world:
+    name: Get Latest Chrome Version from Mac DMG
+    runs-on:
+      - macos-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Chrome DMG
+        id: download-chrome
+        run: |
+          curl -o /tmp/chrome.dmg https://dl.google.com/chrome/mac/universal/stable/GGRO/googlechrome.dmg
+      - name: Mount Chrome DMG
+        id: mount-chrome
+        run: |
+          hdiutil attach /tmp/chrome.dmg 
+      - name: Get Plist Version
+        id: get-plist-version
+        run: |
+          CHROMEVER=$(defaults read /Volumes/Google\ Chrome/Google\ Chrome.app/Contents/Info.plist CFBundleShortVersionString)
+          #cat /Volumes/Google\ Chrome/Google\ Chrome.app/Contents/Info.plist
+          echo "Chrome Version: $CHROMEVER"
